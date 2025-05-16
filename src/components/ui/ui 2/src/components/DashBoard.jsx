@@ -1,196 +1,268 @@
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { auth, firestore } from "../firebase/firebase"; // Import auth and db
+import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 
 function DashBoard() {
-    const navigate = useNavigate();
-    const [tasks, setTasks] = useState(() => {
-        try {
-            const savedTasks = localStorage.getItem('tasks');
-            return savedTasks ? JSON.parse(savedTasks) : [];
-        } catch (e) {
-            console.error("Error loading tasks from localStorage", e);
-            return [];
-        }
-    });
-    const [showForm, setShowForm] = useState(false);
-    const [subject, setSubject] = useState('');
-    const [activityName, setActivityName] = useState('');
-    const [teacher, setTeacher] = useState('');
-    const [deadlineDate, setDeadlineDate] = useState('');
-    const [deadlineTime, setDeadlineTime] = useState('');
+  const navigate = useNavigate();
+  const [tasks, setTasks] = useState(() => {
+    try {
+      const savedTasks = localStorage.getItem("tasks");
+      return savedTasks ? JSON.parse(savedTasks) : [];
+    } catch (e) {
+      console.error("Error loading tasks from localStorage", e);
+      return [];
+    }
+  });
+  const [showForm, setShowForm] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [activityName, setActivityName] = useState("");
+  const [teacher, setTeacher] = useState("");
+  const [deadlineDate, setDeadlineDate] = useState("");
+  const [deadlineTime, setDeadlineTime] = useState("");
 
-    const [createdFlashcardSets, setCreatedFlashcardSets] = useState(() => {
-        try {
-            const savedSets = localStorage.getItem('createdFlashcardSets');
-            return savedSets ? JSON.parse(savedSets) : [];
-        } catch (e) {
-            console.error("Dashboard: Error initializing createdFlashcardSets from localStorage", e);
-            return [];
-        }
-    });
+  const [firstName, setFirstName] = useState(""); // State to store the first name
+  const [loadingGreeting, setLoadingGreeting] = useState(true); // State to handle loading state
 
-    const [quizSummaries, setQuizSummaries] = useState(() => {
-        try {
-            const savedSummaries = localStorage.getItem('quizSummaries');
-            return savedSummaries ? JSON.parse(savedSummaries) : [];
-        } catch (e) {
-            console.error("Dashboard: Error initializing quizSummaries from localStorage", e);
-            return [];
-        }
-    });
+  const [createdFlashcardSets, setCreatedFlashcardSets] = useState(() => {
+    try {
+      const savedSets = localStorage.getItem("createdFlashcardSets");
+      return savedSets ? JSON.parse(savedSets) : [];
+    } catch (e) {
+      console.error(
+        "Dashboard: Error initializing createdFlashcardSets from localStorage",
+        e
+      );
+      return [];
+    }
+  });
 
-    const [hoursStudied, setHoursStudied] = useState(() => {
-        try {
-            const savedHours = localStorage.getItem('hoursStudied');
-            return savedHours ? parseFloat(savedHours) : 0;
-        } catch (e) {
-            console.error("Dashboard: Error initializing hoursStudied from localStorage", e);
-            return 0;
-        }
-    });
+  const [quizSummaries, setQuizSummaries] = useState(() => {
+    try {
+      const savedSummaries = localStorage.getItem("quizSummaries");
+      return savedSummaries ? JSON.parse(savedSummaries) : [];
+    } catch (e) {
+      console.error(
+        "Dashboard: Error initializing quizSummaries from localStorage",
+        e
+      );
+      return [];
+    }
+  });
 
-    useEffect(() => {
-        try {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-        } catch (e) {
-            console.error("Dashboard: Error saving tasks to localStorage", e);
-        }
-    }, [tasks]);
+  const [hoursStudied, setHoursStudied] = useState(() => {
+    try {
+      const savedHours = localStorage.getItem("hoursStudied");
+      return savedHours ? parseFloat(savedHours) : 0;
+    } catch (e) {
+      console.error(
+        "Dashboard: Error initializing hoursStudied from localStorage",
+        e
+      );
+      return 0;
+    }
+  });
 
-    useEffect(() => {
-        try {
-            localStorage.setItem('createdFlashcardSets', JSON.stringify(createdFlashcardSets));
-        } catch (e) {
-            console.error("Dashboard: Error saving createdFlashcardSets to localStorage", e);
-        }
-    }, [createdFlashcardSets]);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setLoadingGreeting(true);
+      try {
+        if (auth.currentUser) {
+          const userDocRef = doc(firestore, "users", auth.currentUser.uid);
+          const docSnap = await getDoc(userDocRef);
 
-    useEffect(() => {
-        try {
-            localStorage.setItem('quizSummaries', JSON.stringify(quizSummaries));
-        } catch (e) {
-            console.error("Dashboard: Error saving quizSummaries to localStorage", e);
-        }
-    }, [quizSummaries]);
-
-    useEffect(() => {
-        try {
-            localStorage.setItem('hoursStudied', hoursStudied.toString());
-        } catch (e) {
-            console.error("Dashboard: Error saving hoursStudied to localStorage", e);
-        }
-    }, [hoursStudied]);
-
-    useEffect(() => {
-        const handleStorageChange = (event) => {
-            if (event.key === 'tasks') {
-                try {
-                    setTasks(event.newValue ? JSON.parse(event.newValue) : []);
-                } catch (e) {
-                    console.error("Dashboard: Error updating tasks from storage event", e);
-                }
-            }
-            if (event.key === 'createdFlashcardSets') {
-                try {
-                    setCreatedFlashcardSets(event.newValue ? JSON.parse(event.newValue) : []);
-                } catch (e) {
-                    console.error("Dashboard: Error updating createdFlashcardSets from storage event", e);
-                }
-            }
-            if (event.key === 'quizSummaries') {
-                 try {
-                    setQuizSummaries(event.newValue ? JSON.parse(event.newValue) : []);
-                } catch (e) {
-                    console.error("Dashboard: Error updating quizSummaries from storage event", e);
-                }
-            }
-             if (event.key === 'hoursStudied') {
-                 try {
-                    setHoursStudied(event.newValue ? parseFloat(event.newValue) : 0);
-                } catch (e) {
-                    console.error("Dashboard: Error updating hoursStudied from storage event", e);
-                }
-            }
-        };
-
-        const refreshData = () => {
-            try {
-                const savedTasksData = localStorage.getItem('tasks');
-                setTasks(savedTasksData ? JSON.parse(savedTasksData) : []);
-
-                const savedFlashcardSets = localStorage.getItem('createdFlashcardSets');
-                setCreatedFlashcardSets(savedFlashcardSets ? JSON.parse(savedFlashcardSets) : []);
-
-                const savedQuizSummaries = localStorage.getItem('quizSummaries');
-                setQuizSummaries(savedQuizSummaries ? JSON.parse(savedQuizSummaries) : []);
-                
-                const savedHours = localStorage.getItem('hoursStudied');
-                setHoursStudied(savedHours ? parseFloat(savedHours) : 0);
-
-            } catch (e) {
-                console.error("Error refreshing data from localStorage on focus/visibility", e);
-            }
-        };
-        
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('focus', refreshData); 
-        document.addEventListener('visibilitychange', () => { 
-            if (document.visibilityState === 'visible') {
-                refreshData();
-            }
-        });
-
-        refreshData(); 
-
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('focus', refreshData);
-            document.removeEventListener('visibilitychange', refreshData);
-        };
-    }, []);
-
-
-    const addTask = () => {
-        if (subject && activityName && teacher && deadlineDate && deadlineTime) {
-            const newTask = { 
-                id: Date.now().toString(), // Added an ID for tasks as well
-                subject, 
-                activityName, 
-                teacher, 
-                deadlineDate, 
-                deadlineTime 
-            };
-            setTasks(prevTasks => [...prevTasks, newTask]);
-            setSubject('');
-            setActivityName('');
-            setTeacher('');
-            setDeadlineDate('');
-            setDeadlineTime('');
-            setShowForm(false);
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            setFirstName(userData.firstName || "User"); // Use 'User' as a default if firstname is not found
+          } else {
+            console.log("No such document!");
+            setFirstName("User"); // Default if user data not found
+          }
         } else {
-            alert('Please fill in all fields for the task.');
+          setFirstName("User"); // Default if no user is logged in
         }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setFirstName("User"); // Default in case of an error
+      } finally {
+        setLoadingGreeting(false);
+      }
     };
 
-    const deleteTask = (taskId) => {
-        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    fetchUserData();
+  }, []); // Empty dependency array means this effect runs once after the initial render
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    } catch (e) {
+      console.error("Dashboard: Error saving tasks to localStorage", e);
+    }
+  }, [tasks]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "createdFlashcardSets",
+        JSON.stringify(createdFlashcardSets)
+      );
+    } catch (e) {
+      console.error(
+        "Dashboard: Error saving createdFlashcardSets to localStorage",
+        e
+      );
+    }
+  }, [createdFlashcardSets]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("quizSummaries", JSON.stringify(quizSummaries));
+    } catch (e) {
+      console.error("Dashboard: Error saving quizSummaries to localStorage", e);
+    }
+  }, [quizSummaries]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("hoursStudied", hoursStudied.toString());
+    } catch (e) {
+      console.error("Dashboard: Error saving hoursStudied to localStorage", e);
+    }
+  }, [hoursStudied]);
+
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      if (event.key === "tasks") {
+        try {
+          setTasks(event.newValue ? JSON.parse(event.newValue) : []);
+        } catch (e) {
+          console.error(
+            "Dashboard: Error updating tasks from storage event",
+            e
+          );
+        }
+      }
+      if (event.key === "createdFlashcardSets") {
+        try {
+          setCreatedFlashcardSets(
+            event.newValue ? JSON.parse(event.newValue) : []
+          );
+        } catch (e) {
+          console.error(
+            "Dashboard: Error updating createdFlashcardSets from storage event",
+            e
+          );
+        }
+      }
+      if (event.key === "quizSummaries") {
+        try {
+          setQuizSummaries(event.newValue ? JSON.parse(event.newValue) : []);
+        } catch (e) {
+          console.error(
+            "Dashboard: Error updating quizSummaries from storage event",
+            e
+          );
+        }
+      }
+      if (event.key === "hoursStudied") {
+        try {
+          setHoursStudied(event.newValue ? parseFloat(event.newValue) : 0);
+        } catch (e) {
+          console.error(
+            "Dashboard: Error updating hoursStudied from storage event",
+            e
+          );
+        }
+      }
     };
 
-    const totalFlashcards = createdFlashcardSets.reduce((sum, set) => {
-        const count = set.cardCount || (set.cards ? set.cards.length : 0) || 0;
-        return sum + count;
-    }, 0);
-    
-    const averageQuizScore = quizSummaries.length > 0 ? 
-        (quizSummaries.reduce((sum, quiz) => sum + parseFloat(quiz.percentage || 0), 0) / quizSummaries.length).toFixed(0) 
-        : 0;
+    const refreshData = () => {
+      try {
+        const savedTasksData = localStorage.getItem("tasks");
+        setTasks(savedTasksData ? JSON.parse(savedTasksData) : []);
 
+        const savedFlashcardSets = localStorage.getItem("createdFlashcardSets");
+        setCreatedFlashcardSets(
+          savedFlashcardSets ? JSON.parse(savedFlashcardSets) : []
+        );
 
-    return (
-        <>
-            <style>
-                {`
+        const savedQuizSummaries = localStorage.getItem("quizSummaries");
+        setQuizSummaries(
+          savedQuizSummaries ? JSON.parse(savedQuizSummaries) : []
+        );
+
+        const savedHours = localStorage.getItem("hoursStudied");
+        setHoursStudied(savedHours ? parseFloat(savedHours) : 0);
+      } catch (e) {
+        console.error(
+          "Error refreshing data from localStorage on focus/visibility",
+          e
+        );
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("focus", refreshData);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        refreshData();
+      }
+    });
+
+    refreshData();
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", refreshData);
+      document.removeEventListener("visibilitychange", refreshData);
+    };
+  }, []);
+
+  const addTask = () => {
+    if (subject && activityName && teacher && deadlineDate && deadlineTime) {
+      const newTask = {
+        id: Date.now().toString(), // Added an ID for tasks as well
+        subject,
+        activityName,
+        teacher,
+        deadlineDate,
+        deadlineTime,
+      };
+      setTasks((prevTasks) => [...prevTasks, newTask]);
+      setSubject("");
+      setActivityName("");
+      setTeacher("");
+      setDeadlineDate("");
+      setDeadlineTime("");
+      setShowForm(false);
+    } else {
+      alert("Please fill in all fields for the task.");
+    }
+  };
+
+  const deleteTask = (taskId) => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+  };
+
+  const totalFlashcards = createdFlashcardSets.reduce((sum, set) => {
+    const count = set.cardCount || (set.cards ? set.cards.length : 0) || 0;
+    return sum + count;
+  }, 0);
+
+  const averageQuizScore =
+    quizSummaries.length > 0
+      ? (
+          quizSummaries.reduce(
+            (sum, quiz) => sum + parseFloat(quiz.percentage || 0),
+            0
+          ) / quizSummaries.length
+        ).toFixed(0)
+      : 0;
+
+  return (
+    <>
+      <style>
+        {`
                     .dashboard-container {
                         background-color: #f7f9f9;
                         display: flex;
@@ -595,173 +667,222 @@ function DashBoard() {
                         }
                      }
                 `}
-            </style>
-            <div className="dashboard-container">
-                <div className="greeting-section">
-                    <h1 className="greeting-h1">
-                        Hi <span className="greeting-span">Aimee</span>, Welcome to Tala
-                    </h1>
-                    <p className="greeting-p">
-                        Your smart study buddy! Let’s make learning easier, faster, and more fun. Ready to get started?
-                    </p>
-                </div>
+      </style>
+      <div className="dashboard-container">
+        <div className="greeting-section">
+          <h1 className="greeting-h1">
+            Hi{" "}
+            <span className="greeting-span">
+              {loadingGreeting ? "Loading..." : firstName}
+            </span>
+            , Welcome to Tala
+          </h1>
+          <p className="greeting-p">
+            Your smart study buddy! Let’s make learning easier, faster, and more
+            fun. Ready to get started?
+          </p>
+        </div>
 
-                <div className="dashboard-content-row">
-                    <div className="task-container">
-                        <div className="task-header">
-                            <h2 className="task-title">Today's Task</h2>
-                            <button
-                                className="add-task-button"
-                                onClick={() => setShowForm(true)}
-                            >
-                                Add Task
-                            </button>
-                        </div>
-                        <div className="task-list">
-                            {tasks.length === 0 && (
-                                <p className="placeholder-text" style={{color: 'rgba(255,255,255,0.8)'}}>No tasks for today. Add a new task!</p>
-                            )}
-                            {tasks.map((task) => (
-                                <div key={task.id} className="task-item">
-                                    <div>
-                                        <strong>Subject:</strong> {task.subject} <br />
-                                        <strong>Activity:</strong> {task.activityName} <br />
-                                        <strong>Teacher:</strong> {task.teacher} <br />
-                                        <strong>Deadline:</strong> {task.deadlineDate} at {task.deadlineTime}
-                                    </div>
-                                    <button
-                                        className="delete-task-button"
-                                        onClick={() => deleteTask(task.id)}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="right-panel">
-                        <div className="top-cards-row">
-                            <div className="card">
-                                <h3 className="card-title">No of Flashcards</h3>
-                                <p className="card-description">{totalFlashcards}</p>
-                            </div>
-                            <div className="card">
-                                <h3 className="card-title">Avg. Quiz Score</h3>
-                                <p className="card-description">
-                                    {quizSummaries.length > 0 ? `${averageQuizScore}%` : '0%'}
-                                </p>
-                            </div>
-                            <div className="card">
-                                <h3 className="card-title">Hours Studied</h3>
-                                <p className="card-description">{hoursStudied.toFixed(2)}h</p>
-                            </div>
-                        </div>
-                        <div className="bottom-large-cards-row">
-                            <div className="flashcard-sets-container">
-                                <h2>My Flashcard Sets</h2>
-                                <div className="scrollable-content-area">
-                                    {createdFlashcardSets.length === 0 ? (
-                                        <p className="placeholder-text">No flashcard sets created yet. Create one to get started!</p>
-                                    ) : (
-                                        createdFlashcardSets.map(set => (
-                                            <div 
-                                                key={set.id} 
-                                                className="flashcard-set-item"
-                                                onClick={() => navigate(`/flashcard-set/${set.id}`)}
-                                            >
-                                                <h3>{set.title}</h3>
-                                                <p>Cards: {set.cardCount || (set.cards ? set.cards.length : 0) || 0}</p>
-                                                <p>Created: {set.dateCreated || 'N/A'}</p>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                                <button
-                                    className="create-set-button"
-                                    onClick={() => navigate('/create-flashcard')}
-                                >
-                                    Create New Set
-                                </button>
-                            </div>
-
-                            <div className="quiz-summaries-container">
-                                <h2>Recent Quiz Summaries</h2>
-                                <div className="scrollable-content-area">
-                                    {quizSummaries.length === 0 ? (
-                                        <p className="placeholder-text">No quiz summaries available yet. Take a quiz!</p>
-                                    ) : (
-                                        quizSummaries.map(summary => (
-                                            <div key={summary.id} className="quiz-summary-item">
-                                                <h3>{summary.pdfName || 'Quiz'}</h3>
-                                                <p>Date: {summary.dateTaken || 'N/A'}</p>
-                                                <p>Score: {summary.score || 'N/A'} ({summary.percentage || '0%'})</p>
-                                                <h4>Questions & Answers:</h4>
-                                                {summary.questionsAndAnswers && summary.questionsAndAnswers.length > 0 ? (
-                                                    <ul className="quiz-question-answer-list">
-                                                        {summary.questionsAndAnswers.slice(0, 2).map((qa, index) => ( 
-                                                            <li key={index} className="quiz-question-answer-pair">
-                                                                <span className="question">{index + 1}. {qa.question}</span>
-                                                                <span className="answer">Answer: {qa.correctAnswer}</span>
-                                                            </li>
-                                                        ))}
-                                                        {summary.questionsAndAnswers.length > 2 && <li style={{fontSize: '12px', color: '#777', marginTop: '5px'}}>...and {summary.questionsAndAnswers.length - 2} more</li>}
-                                                    </ul>
-                                                ) : (
-                                                    <p>No question details available.</p>
-                                                )}
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div className="dashboard-content-row">
+          <div className="task-container">
+            <div className="task-header">
+              <h2 className="task-title">Today's Task</h2>
+              <button
+                className="add-task-button"
+                onClick={() => setShowForm(true)}
+              >
+                Add Task
+              </button>
             </div>
-
-            {showForm && (
-                <div className="form-overlay">
-                    <div className="form-container">
-                        <input
-                            type="text"
-                            placeholder="Subject Name"
-                            value={subject}
-                            onChange={(e) => setSubject(e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Name of the Activity"
-                            value={activityName}
-                            onChange={(e) => setActivityName(e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Teacher"
-                            value={teacher}
-                            onChange={(e) => setTeacher(e.target.value)}
-                        />
-                        <input
-                            type="date"
-                            placeholder="Deadline Date"
-                            value={deadlineDate}
-                            onChange={(e) => setDeadlineDate(e.target.value)}
-                        />
-                        <input
-                            type="time"
-                            placeholder="Deadline Time"
-                            value={deadlineTime}
-                            onChange={(e) => setDeadlineTime(e.target.value)}
-                        />
-                        <div className="form-buttons-container">
-                            <button onClick={() => setShowForm(false)} style={{backgroundColor: '#aaa'}}>Cancel</button>
-                            <button onClick={addTask}>Submit Task</button>
-                        </div>
-                    </div>
+            <div className="task-list">
+              {tasks.length === 0 && (
+                <p
+                  className="placeholder-text"
+                  style={{ color: "rgba(255,255,255,0.8)" }}
+                >
+                  No tasks for today. Add a new task!
+                </p>
+              )}
+              {tasks.map((task) => (
+                <div key={task.id} className="task-item">
+                  <div>
+                    <strong>Subject:</strong> {task.subject} <br />
+                    <strong>Activity:</strong> {task.activityName} <br />
+                    <strong>Teacher:</strong> {task.teacher} <br />
+                    <strong>Deadline:</strong> {task.deadlineDate} at{" "}
+                    {task.deadlineTime}
+                  </div>
+                  <button
+                    className="delete-task-button"
+                    onClick={() => deleteTask(task.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
-            )}
-        </>
-    );
+              ))}
+            </div>
+          </div>
+
+          <div className="right-panel">
+            <div className="top-cards-row">
+              <div className="card">
+                <h3 className="card-title">No of Flashcards</h3>
+                <p className="card-description">{totalFlashcards}</p>
+              </div>
+              <div className="card">
+                <h3 className="card-title">Avg. Quiz Score</h3>
+                <p className="card-description">
+                  {quizSummaries.length > 0 ? `${averageQuizScore}%` : "0%"}
+                </p>
+              </div>
+              <div className="card">
+                <h3 className="card-title">Hours Studied</h3>
+                <p className="card-description">{hoursStudied.toFixed(2)}h</p>
+              </div>
+            </div>
+            <div className="bottom-large-cards-row">
+              <div className="flashcard-sets-container">
+                <h2>My Flashcard Sets</h2>
+                <div className="scrollable-content-area">
+                  {createdFlashcardSets.length === 0 ? (
+                    <p className="placeholder-text">
+                      No flashcard sets created yet. Create one to get started!
+                    </p>
+                  ) : (
+                    createdFlashcardSets.map((set) => (
+                      <div
+                        key={set.id}
+                        className="flashcard-set-item"
+                        onClick={() => navigate(`/flashcard-set/${set.id}`)}
+                      >
+                        <h3>{set.title}</h3>
+                        <p>
+                          Cards:{" "}
+                          {set.cardCount ||
+                            (set.cards ? set.cards.length : 0) ||
+                            0}
+                        </p>
+                        <p>Created: {set.dateCreated || "N/A"}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <button
+                  className="create-set-button"
+                  onClick={() => navigate("/create-flashcard")}
+                >
+                  Create New Set
+                </button>
+              </div>
+
+              <div className="quiz-summaries-container">
+                <h2>Recent Quiz Summaries</h2>
+                <div className="scrollable-content-area">
+                  {quizSummaries.length === 0 ? (
+                    <p className="placeholder-text">
+                      No quiz summaries available yet. Take a quiz!
+                    </p>
+                  ) : (
+                    quizSummaries.map((summary) => (
+                      <div key={summary.id} className="quiz-summary-item">
+                        <h3>{summary.pdfName || "Quiz"}</h3>
+                        <p>Date: {summary.dateTaken || "N/A"}</p>
+                        <p>
+                          Score: {summary.score || "N/A"} (
+                          {summary.percentage || "0%"})
+                        </p>
+                        <h4>Questions & Answers:</h4>
+                        {summary.questionsAndAnswers &&
+                        summary.questionsAndAnswers.length > 0 ? (
+                          <ul className="quiz-question-answer-list">
+                            {summary.questionsAndAnswers
+                              .slice(0, 2)
+                              .map((qa, index) => (
+                                <li
+                                  key={index}
+                                  className="quiz-question-answer-pair"
+                                >
+                                  <span className="question">
+                                    {index + 1}. {qa.question}
+                                  </span>
+                                  <span className="answer">
+                                    Answer: {qa.correctAnswer}
+                                  </span>
+                                </li>
+                              ))}
+                            {summary.questionsAndAnswers.length > 2 && (
+                              <li
+                                style={{
+                                  fontSize: "12px",
+                                  color: "#777",
+                                  marginTop: "5px",
+                                }}
+                              >
+                                ...and {summary.questionsAndAnswers.length - 2}{" "}
+                                more
+                              </li>
+                            )}
+                          </ul>
+                        ) : (
+                          <p>No question details available.</p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showForm && (
+        <div className="form-overlay">
+          <div className="form-container">
+            <input
+              type="text"
+              placeholder="Subject Name"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Name of the Activity"
+              value={activityName}
+              onChange={(e) => setActivityName(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Teacher"
+              value={teacher}
+              onChange={(e) => setTeacher(e.target.value)}
+            />
+            <input
+              type="date"
+              placeholder="Deadline Date"
+              value={deadlineDate}
+              onChange={(e) => setDeadlineDate(e.target.value)}
+            />
+            <input
+              type="time"
+              placeholder="Deadline Time"
+              value={deadlineTime}
+              onChange={(e) => setDeadlineTime(e.target.value)}
+            />
+            <div className="form-buttons-container">
+              <button
+                onClick={() => setShowForm(false)}
+                style={{ backgroundColor: "#aaa" }}
+              >
+                Cancel
+              </button>
+              <button onClick={addTask}>Submit Task</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 export default DashBoard;
