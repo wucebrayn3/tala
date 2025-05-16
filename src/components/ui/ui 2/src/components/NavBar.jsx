@@ -242,7 +242,18 @@ const NavBar = ({ isAuthenticated, onLogout }) => { // Accept props
                         <ul style={{...styles.dropdownMenu, display: 'block'}}>
                             <li>
                                 <Link
-                                    to="/flashcard" // This page gives option to upload or create
+                                    to="/upload"
+                                    style={styles.dropdownMenuItem}
+                                    onClick={closeDropdowns}
+                                    onMouseEnter={(e) => Object.assign(e.currentTarget.style, styles.dropdownMenuItemHover)}
+                                    onMouseLeave={(e) => Object.assign(e.currentTarget.style, styles.dropdownMenuItem, {backgroundColor: '', color: '#333'})}
+                                >
+                                    Quizzes
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    to="/create-flashcard"
                                     style={styles.dropdownMenuItem}
                                     onClick={closeDropdowns}
                                     onMouseEnter={(e) => Object.assign(e.currentTarget.style, styles.dropdownMenuItemHover)}
