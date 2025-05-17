@@ -244,6 +244,14 @@ function DashBoard() {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
   };
 
+  const deleteFlashcardSet = (setId) => {
+    setCreatedFlashcardSets((prevSets) => prevSets.filter((set) => set.id !== setId));
+  };
+
+  const deleteQuizSummary = (summaryId) => {
+    setQuizSummaries((prevSummaries) => prevSummaries.filter((summary) => summary.id !== summaryId));
+  };
+
   const totalFlashcards = createdFlashcardSets.reduce((sum, set) => {
     const count = set.cardCount || (set.cards ? set.cards.length : 0) || 0;
     return sum + count;
@@ -754,15 +762,23 @@ function DashBoard() {
                         key={set.id}
                         className="flashcard-set-item"
                         onClick={() => navigate(`/flashcard-set/${set.id}`)}
+                        style={{ position: "relative" }}
                       >
                         <h3>{set.title}</h3>
                         <p>
-                          Cards:{" "}
-                          {set.cardCount ||
-                            (set.cards ? set.cards.length : 0) ||
-                            0}
+                          Cards: {set.cardCount || (set.cards ? set.cards.length : 0) || 0}
                         </p>
                         <p>Created: {set.dateCreated || "N/A"}</p>
+                        <button
+                          className="delete-task-button"
+                          style={{ position: "absolute", top: 10, right: 10, zIndex: 2 }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            deleteFlashcardSet(set.id);
+                          }}
+                        >
+                          Delete
+                        </button>
                       </div>
                     ))
                   )}
@@ -784,7 +800,7 @@ function DashBoard() {
                     </p>
                   ) : (
                     quizSummaries.map((summary) => (
-                      <div key={summary.id} className="quiz-summary-item">
+                      <div key={summary.id} className="quiz-summary-item" style={{ position: "relative" }}>
                         <h3>{summary.pdfName || "Quiz"}</h3>
                         <p>Date: {summary.dateTaken || "N/A"}</p>
                         <p>
@@ -818,14 +834,20 @@ function DashBoard() {
                                   marginTop: "5px",
                                 }}
                               >
-                                ...and {summary.questionsAndAnswers.length - 2}{" "}
-                                more
+                                ...and {summary.questionsAndAnswers.length - 2} more
                               </li>
                             )}
                           </ul>
                         ) : (
                           <p>No question details available.</p>
                         )}
+                        <button
+                          className="delete-task-button"
+                          style={{ position: "absolute", bottom: 10, right: 10, zIndex: 2 }}
+                          onClick={() => deleteQuizSummary(summary.id)}
+                        >
+                          Delete
+                        </button>
                       </div>
                     ))
                   )}
