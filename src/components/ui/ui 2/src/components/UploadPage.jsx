@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { generateQuestionnaire } from '@/ai/flows/generate-questionnaire';
 import { evaluateAnswer } from '@/ai/flows/evaluate-answer';
@@ -181,6 +180,60 @@ const UploadPage = () => {
     },
   };
 
+// Helper: Save quiz state to localStorage
+const saveQuizState = (state) => {
+  try {
+    localStorage.setItem('uploadQuizState', JSON.stringify(state));
+  } catch (e) {
+    console.error('Failed to save quiz state', e);
+  }
+};
+
+// Helper: Load quiz state from localStorage
+const loadQuizState = () => {
+  try {
+    const state = localStorage.getItem('uploadQuizState');
+    return state ? JSON.parse(state) : null;
+  } catch (e) {
+    console.error('Failed to load quiz state', e);
+    return null;
+  }
+};
+
+  // Restore quiz state on mount
+  useEffect(() => {
+    const saved = loadQuizState();
+    if (saved) {
+      setPdfContent(saved.pdfContent || null);
+      setPdfFileName(saved.pdfFileName || '');
+      setQuestions(saved.questions || null);
+      setUserAnswers(saved.userAnswers || []);
+      setIsPdfUploaded(saved.isPdfUploaded || false);
+      setEvaluationResults(saved.evaluationResults || []);
+      setQuestionCount(saved.questionCount || 5);
+      setScore(saved.score || 0);
+      setIsLoading(false);
+      setIsEvaluating(saved.isEvaluating || []);
+      setShowResults(saved.showResults || false);
+    }
+  }, []);
+
+  // Save quiz state on every relevant change
+  useEffect(() => {
+    saveQuizState({
+      pdfContent,
+      pdfFileName,
+      questions,
+      userAnswers,
+      isPdfUploaded,
+      evaluationResults,
+      questionCount,
+      score,
+      isLoading,
+      isEvaluating,
+      showResults,
+    });
+  }, [pdfContent, pdfFileName, questions, userAnswers, isPdfUploaded, evaluationResults, questionCount, score, isLoading, isEvaluating, showResults]);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -249,7 +302,20 @@ const UploadPage = () => {
     setEvaluationResults([]);
     setShowResults(false);
     setScore(0);
-
+    // Save pending state
+    saveQuizState({
+      pdfContent,
+      pdfFileName,
+      questions: null,
+      userAnswers: [],
+      isPdfUploaded,
+      evaluationResults: [],
+      questionCount,
+      score: 0,
+      isLoading: true,
+      isEvaluating: [],
+      showResults: false,
+    });
     try {
       const questionnaire = await generateQuestionnaire({ pdfContent, questionCount: Number(questionCount) });
       if (!questionnaire || !questionnaire.questions || questionnaire.questions.length === 0) {
@@ -259,6 +325,20 @@ const UploadPage = () => {
       setUserAnswers(Array(questionnaire.questions.length).fill(''));
       setEvaluationResults(Array(questionnaire.questions.length).fill(null));
       setIsEvaluating(Array(questionnaire.questions.length).fill(false));
+      // Save finished state
+      saveQuizState({
+        pdfContent,
+        pdfFileName,
+        questions: questionnaire.questions,
+        userAnswers: Array(questionnaire.questions.length).fill(''),
+        isPdfUploaded,
+        evaluationResults: Array(questionnaire.questions.length).fill(null),
+        questionCount,
+        score: 0,
+        isLoading: false,
+        isEvaluating: Array(questionnaire.questions.length).fill(false),
+        showResults: false,
+      });
     } catch (error) {
       console.error('Error generating questions:', error);
       const errorMessageText = error instanceof Error ? error.message : String(error);
@@ -268,6 +348,19 @@ const UploadPage = () => {
            alert(`Failed to generate questions: ${errorMessageText}. Please try again.`);
        }
       setQuestions(null);
+      saveQuizState({
+        pdfContent,
+        pdfFileName,
+        questions: null,
+        userAnswers: [],
+        isPdfUploaded,
+        evaluationResults: [],
+        questionCount,
+        score: 0,
+        isLoading: false,
+        isEvaluating: [],
+        showResults: false,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -404,6 +497,8 @@ const UploadPage = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    // Remove quiz state from localStorage
+    try { localStorage.removeItem('uploadQuizState'); } catch (e) {}
   };
   
   const getButtonStyles = (disabled) => ({
